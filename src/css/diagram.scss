@@ -32,7 +32,8 @@ $task-fill: #487e3a;
 }
 
 g.node > * {
-	fill: white;
+  fill: #000;
+  text-shadow: none;
 }
 
 svg > g {

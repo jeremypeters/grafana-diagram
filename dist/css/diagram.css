@@ -15,7 +15,8 @@
   display: block; }
 
 g.node > * {
-  fill: white; }
+  fill: #000;
+  text-shadow: none; }
 
 svg > g {
   overflow: visible;
