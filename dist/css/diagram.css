@@ -1,6 +1,12 @@
 .diagram {
   overflow: auto; }
 
+.diagram-alert {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0; }
+
 .gradient-values-container .gradient-value-max {
   float: right; }
 

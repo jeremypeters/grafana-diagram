@@ -226,7 +226,7 @@ System.register(['./libs/mermaid/dist/mermaidAPI', 'app/core/time_series2', 'app
 
               if (!$panelTitle.length) {
                 this.error = true;
-                this.errorText = this.$sce.trustAsHtml('The panel "' + id + '" does not exist');
+                this.errorText = this.$sce.trustAsHtml('<div class="alert alert-error diagram-alert">The panel "' + id + '" does not exist</div>');
 
                 this.$scope.$apply();
 
