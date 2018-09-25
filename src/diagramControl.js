@@ -148,7 +148,9 @@ class DiagramCtrl extends MetricsPanelCtrl {
       if (!$panelTitle.length) {
         this.error = true;
         this.errorText = this.$sce.trustAsHtml(
-          'The panel "' + id + '" does not exist'
+          '<div class="alert alert-error diagram-alert">The panel "' +
+            id +
+            '" does not exist</div>'
         );
 
         this.$scope.$apply();
