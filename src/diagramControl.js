@@ -1,14 +1,8 @@
 import './libs/mermaid/dist/mermaidAPI';
 import TimeSeries from 'app/core/time_series2';
 import kbn from 'app/core/utils/kbn';
-import {
-  MetricsPanelCtrl
-} from 'app/plugins/sdk';
-import {
-  diagramEditor,
-  displayEditor,
-  compositeEditor
-} from './properties';
+import { MetricsPanelCtrl } from 'app/plugins/sdk';
+import { diagramEditor, displayEditor, compositeEditor } from './properties';
 import _ from 'lodash';
 import './series_overrides_diagram_ctrl';
 import './css/diagram.css!';
@@ -20,7 +14,11 @@ const panelDefaults = {
   seriesOverrides: [],
   thresholds: '0,10',
   decimals: 2, // decimal precision
-  colors: ['rgba(50, 172, 45, 0.97)', 'rgba(237, 129, 40, 0.89)', 'rgba(245, 54, 54, 0.9)'],
+  colors: [
+    'rgba(50, 172, 45, 0.97)',
+    'rgba(237, 129, 40, 0.89)',
+    'rgba(245, 54, 54, 0.9)'
+  ],
   legend: {
     show: true,
     min: true,
@@ -40,12 +38,15 @@ const panelDefaults = {
   format: 'none',
   valueName: 'avg',
   valueOptions: ['avg', 'min', 'max', 'total', 'current'],
-  valueMaps: [{
-    value: 'null',
-    op: '=',
-    text: 'N/A'
-  }],
-  content: 'graph LR\n' +
+  valueMaps: [
+    {
+      value: 'null',
+      op: '=',
+      text: 'N/A'
+    }
+  ],
+  content:
+    'graph LR\n' +
     'A[Square Rect] -- Link text --> B((Circle))\n' +
     'A --> C(Round Rect)\n' +
     'B --> D{Rhombus}\n' +
@@ -73,7 +74,7 @@ const panelDefaults = {
       messageMargin: 35, // - Space between messages
       mirrorActors: true, // - mirror actors under diagram
       bottomMarginAdj: 1, // - Depending on css styling this might need adjustment. Prolongs the edge of the diagram downwards
-      useMaxWidth: true, // - when this flag is set the height and width is set to 100% and is then scaling with the available space if not the absolute space required is used
+      useMaxWidth: true // - when this flag is set the height and width is set to 100% and is then scaling with the available space if not the absolute space required is used
     },
     gantt: {
       titleTopMargin: 25, // - margin top for the text over the gantt diagram
@@ -84,7 +85,7 @@ const panelDefaults = {
       gridLineStartPadding: 35, // - Vertical starting position of the grid lines
       fontSize: 11, // - font size ...
       fontFamily: '"Open-Sans", "sans-serif"', // - font family ...
-      numberSectionStyles: 3, // - the number of alternating section styles
+      numberSectionStyles: 3 // - the number of alternating section styles
       /** axisFormatter: // - formatting of the axis, this might need adjustment to match your locale and preferences
 				[
 		        // Within a day
@@ -107,7 +108,7 @@ const panelDefaults = {
 		        ['%m-%y', function (d) {
 		            return d.getMonth();
 		        }]] **/
-    },
+    }
     //classDiagram: {},
     //info: {}
   }
@@ -125,7 +126,10 @@ class DiagramCtrl extends MetricsPanelCtrl {
     this.events.on('data-received', this.onDataReceived.bind(this));
     this.events.on('data-snapshot-load', this.onDataReceived.bind(this));
     this.unitFormats = kbn.getUnitFormats();
+    this.error = false;
+    this.errorText = '';
     this.initializeMermaid();
+    this.setupScrollToPanel();
   }
 
   initializeMermaid() {
@@ -133,9 +137,47 @@ class DiagramCtrl extends MetricsPanelCtrl {
     mermaidAPI.parseError = this.handleParseError.bind(this);
   }
 
+  setupScrollToPanel() {
+    function scrollToPanel(id) {
+      var $panelTitle = $('.panel-title-text').filter(function(index) {
+        return $(this).text() === id;
+      });
+      var $scrollCanvas = $('.scroll-canvas');
+      var newScrollTopPosition;
+
+      if (!$panelTitle.length) {
+        this.error = true;
+        this.errorText = this.$sce.trustAsHtml(
+          'The panel "' + id + '" does not exist'
+        );
+
+        this.$scope.$apply();
+
+        setTimeout(
+          function() {
+            this.error = false;
+            this.errorText = '';
+
+            this.$scope.$apply();
+          }.bind(this),
+          2000
+        );
+
+        return;
+      }
+
+      newScrollTopPosition = $panelTitle.offset().top - 75;
+      $scrollCanvas.animate({ scrollTop: newScrollTopPosition });
+    }
+
+    window.scrollToPanel = scrollToPanel.bind(this);
+  }
+
   handleParseError(err, hash) {
     this.error = 'Failed to parse diagram definition';
-    this.errorText = this.$sce.trustAsHtml('<p>Diagram Definition:</p><pre>' + err + '</pre>');
+    this.errorText = this.$sce.trustAsHtml(
+      '<p>Diagram Definition:</p><pre>' + err + '</pre>'
+    );
   }
 
   onInitEditMode() {
@@ -164,7 +206,8 @@ class DiagramCtrl extends MetricsPanelCtrl {
 
   replaceMetricCharacters(metricName) {
     // a datasource sending bad data will have a type other than string, set it to "MISSING_METRIC_TARGET" and return
-    if (typeof metricName !== 'string') return "DATASOURCE_SENT_INVALID_METRIC_TARGET";
+    if (typeof metricName !== 'string')
+      return 'DATASOURCE_SENT_INVALID_METRIC_TARGET';
     var replacedText = metricName.replace(/"|,|;|=|:|{|}/g, '_');
     for (var index in this.panel.metricCharacterReplacements) {
       var replacement = this.panel.metricCharacterReplacements[index];
@@ -176,10 +219,7 @@ class DiagramCtrl extends MetricsPanelCtrl {
       if (pattern[0] === '/') {
         pattern = kbn.stringToJsRegex(replacement.replacementPattern);
       }
-      replacedText = replacedText.replace(
-        pattern,
-        replacement.replaceWithText
-      );
+      replacedText = replacedText.replace(pattern, replacement.replaceWithText);
     }
     return replacedText;
   }
@@ -208,7 +248,10 @@ class DiagramCtrl extends MetricsPanelCtrl {
   }
 
   removeSeriesOverride(override) {
-    this.panel.seriesOverrides = _.without(this.panel.seriesOverrides, override);
+    this.panel.seriesOverrides = _.without(
+      this.panel.seriesOverrides,
+      override
+    );
     this.refresh();
   }
 
@@ -239,13 +282,18 @@ class DiagramCtrl extends MetricsPanelCtrl {
   }
 
   addMetricCharacterReplacement(replacement) {
-    this.panel.metricCharacterReplacements.push(replacement || {
-      replacementPattern: '',
-      replaceWithText: '_'
-    });
+    this.panel.metricCharacterReplacements.push(
+      replacement || {
+        replacementPattern: '',
+        replaceWithText: '_'
+      }
+    );
   }
   removeMetricCharacterReplacement(replacement) {
-    this.panel.metricCharacterReplacements = _.without(this.panel.metricCharacterReplacements, replacement);
+    this.panel.metricCharacterReplacements = _.without(
+      this.panel.metricCharacterReplacements,
+      replacement
+    );
     this.refresh();
   }
 
@@ -282,14 +330,20 @@ class DiagramCtrl extends MetricsPanelCtrl {
       this.clearDiagram();
 
       var mode = this.panel.mode;
-      var templatedURL = this.templateSrv.replace(this.panel.mermaidServiceUrl, this.panel.scopedVars);
+      var templatedURL = this.templateSrv.replace(
+        this.panel.mermaidServiceUrl,
+        this.panel.scopedVars
+      );
 
       function updateDiagram_cont(_this, graphDefinition) {
         // substitute values inside "link text"
         // this will look for any composite prefixed with a # and substitute the value of the composite
         // if a series alias is found, in the form #alias, the value will be substituted
         // this allows link values to be displayed based on the metric
-        graphDefinition = _this.substituteHashPrefixedNotation(graphDefinition, data);
+        graphDefinition = _this.substituteHashPrefixedNotation(
+          graphDefinition,
+          data
+        );
         graphDefinition = _this.templateSrv.replaceWithText(graphDefinition);
         _this.diagramType = mermaidAPI.detectType(graphDefinition);
         var diagramContainer = $(document.getElementById(_this.containerDivId));
@@ -311,20 +365,21 @@ class DiagramCtrl extends MetricsPanelCtrl {
         this.$http({
           method: 'GET',
           url: templatedURL
-        }).then(function successCallback(response) {
-          //the response must have text/plain content-type
-          // console.info(response.data);
-          updateDiagram_cont.call(_this, response.data);
-        }, function errorCallback(response) {
-          console.warn('error', response);
-        })
+        }).then(
+          function successCallback(response) {
+            //the response must have text/plain content-type
+            // console.info(response.data);
+            updateDiagram_cont.call(_this, response.data);
+          },
+          function errorCallback(response) {
+            console.warn('error', response);
+          }
+        );
       } else {
         updateDiagram_cont(this, this.panel.content);
       }
     }
   } // End updateDiagram()
-
-
 
   /**
    * substitute values inside "link text"
@@ -365,19 +420,32 @@ class DiagramCtrl extends MetricsPanelCtrl {
           switch (valueType) {
             case '#':
               displayedValue = data[aComposite.name].value;
-              graphDefinition = graphDefinition.replace('#' + aMatch, displayedValue);
+              graphDefinition = graphDefinition.replace(
+                '#' + aMatch,
+                displayedValue
+              );
               break;
             case '!':
-              displayedValue = data[aComposite.name].valueRawFormattedWithPrefix;
-              graphDefinition = graphDefinition.replace('!' + aMatch, displayedValue);
+              displayedValue =
+                data[aComposite.name].valueRawFormattedWithPrefix;
+              graphDefinition = graphDefinition.replace(
+                '!' + aMatch,
+                displayedValue
+              );
               break;
             case '@':
               displayedValue = data[aComposite.name].valueFormatted;
-              graphDefinition = graphDefinition.replace('@' + aMatch, displayedValue);
+              graphDefinition = graphDefinition.replace(
+                '@' + aMatch,
+                displayedValue
+              );
               break;
             case '&':
               displayedValue = data[aComposite.name].valueFormattedWithPrefix;
-              graphDefinition = graphDefinition.replace('&' + aMatch, displayedValue);
+              graphDefinition = graphDefinition.replace(
+                '&' + aMatch,
+                displayedValue
+              );
               break;
           }
         }
@@ -390,11 +458,17 @@ class DiagramCtrl extends MetricsPanelCtrl {
           switch (valueType) {
             case '#':
               displayedValue = data[seriesItem.alias].value;
-              graphDefinition = graphDefinition.replace('#' + aMatch, displayedValue);
+              graphDefinition = graphDefinition.replace(
+                '#' + aMatch,
+                displayedValue
+              );
               break;
             case '@':
               displayedValue = data[seriesItem.alias].valueFormatted;
-              graphDefinition = graphDefinition.replace('@' + aMatch, displayedValue);
+              graphDefinition = graphDefinition.replace(
+                '@' + aMatch,
+                displayedValue
+              );
               break;
           }
         }
@@ -424,7 +498,6 @@ class DiagramCtrl extends MetricsPanelCtrl {
     this.render();
   }
 
-
   setValues(data) {
     if (this.series && this.series.length > 0) {
       for (var i = 0; i < this.series.length; i++) {
@@ -444,17 +517,33 @@ class DiagramCtrl extends MetricsPanelCtrl {
           data[seriesItem.alias].valueFormated = _.escape(lastValue);
           data[seriesItem.alias].valueRounded = 0;
         } else {
-          data[seriesItem.alias].value = seriesItem.stats[data[seriesItem.alias].valueName];
-          var decimalInfo = this.getDecimalsForValue(data[seriesItem.alias].value);
+          data[seriesItem.alias].value =
+            seriesItem.stats[data[seriesItem.alias].valueName];
+          var decimalInfo = this.getDecimalsForValue(
+            data[seriesItem.alias].value
+          );
           var formatFunc = kbn.valueFormats[data[seriesItem.alias].format];
           // put the value in quotes to escape "most" special characters
-          data[seriesItem.alias].valueFormatted = formatFunc(data[seriesItem.alias].value, decimalInfo.decimals, decimalInfo.scaledDecimals);
-          data[seriesItem.alias].valueRounded = kbn.roundValue(data[seriesItem.alias].value, decimalInfo.decimals);
+          data[seriesItem.alias].valueFormatted = formatFunc(
+            data[seriesItem.alias].value,
+            decimalInfo.decimals,
+            decimalInfo.scaledDecimals
+          );
+          data[seriesItem.alias].valueRounded = kbn.roundValue(
+            data[seriesItem.alias].value,
+            decimalInfo.decimals
+          );
         }
         if (this.panel.legend.gradient.enabled) {
-          data[seriesItem.alias].color = this.getGradientForValue(data[seriesItem.alias].colorData, data[seriesItem.alias].value);
+          data[seriesItem.alias].color = this.getGradientForValue(
+            data[seriesItem.alias].colorData,
+            data[seriesItem.alias].value
+          );
         } else {
-          data[seriesItem.alias].color = getColorForValue(data[seriesItem.alias].colorData, data[seriesItem.alias].value);
+          data[seriesItem.alias].color = getColorForValue(
+            data[seriesItem.alias].colorData,
+            data[seriesItem.alias].value
+          );
         }
       }
     }
@@ -476,15 +565,20 @@ class DiagramCtrl extends MetricsPanelCtrl {
           currentWorstSeries = seriesItem;
           currentWorstSeriesName = seriesItem.nameOfMetric;
         } else {
-          currentWorstSeries = this.getWorstSeries(currentWorstSeries, seriesItem);
+          currentWorstSeries = this.getWorstSeries(
+            currentWorstSeries,
+            seriesItem
+          );
           currentWorstSeriesName = currentWorstSeries.nameOfMetric;
         }
         delete seriesItem.nameOfMetric;
       }
       // Prefix the valueFormatted with the actual metric name
       if (currentWorstSeries !== null) {
-        currentWorstSeries.valueFormattedWithPrefix = currentWorstSeriesName + ': ' + currentWorstSeries.valueFormatted;
-        currentWorstSeries.valueRawFormattedWithPrefix = currentWorstSeriesName + ': ' + currentWorstSeries.value;
+        currentWorstSeries.valueFormattedWithPrefix =
+          currentWorstSeriesName + ': ' + currentWorstSeries.valueFormatted;
+        currentWorstSeries.valueRawFormattedWithPrefix =
+          currentWorstSeriesName + ': ' + currentWorstSeries.value;
         // currentWorstSeries.valueFormatted = currentWorstSeriesName + ': ' + currentWorstSeries.valueFormatted;
         // now push the composite into data
         data[aComposite.name] = currentWorstSeries;
@@ -496,8 +590,8 @@ class DiagramCtrl extends MetricsPanelCtrl {
     var worstSeries = series1;
     var series1thresholdLevel = this.getThresholdLevel(series1);
     var series2thresholdLevel = this.getThresholdLevel(series2);
-    console.log("Series1 threshold level: " + series1thresholdLevel);
-    console.log("Series2 threshold level: " + series2thresholdLevel);
+    console.log('Series1 threshold level: ' + series1thresholdLevel);
+    console.log('Series2 threshold level: ' + series2thresholdLevel);
     if (series2thresholdLevel > series1thresholdLevel) {
       // series2 has higher threshold violation
       worstSeries = series2;
@@ -570,9 +664,11 @@ class DiagramCtrl extends MetricsPanelCtrl {
         }
       }
     }
-    colorData.thresholds = (overrides.thresholds || this.panel.thresholds).split(',').map(function(strVale) {
-      return Number(strVale.trim());
-    });
+    colorData.thresholds = (overrides.thresholds || this.panel.thresholds)
+      .split(',')
+      .map(function(strVale) {
+        return Number(strVale.trim());
+      });
     colorData.colorMap = this.panel.colors.slice();
     colorData.invertColors = overrides.invertColors || false;
     if (colorData.invertColors) {
@@ -592,7 +688,6 @@ class DiagramCtrl extends MetricsPanelCtrl {
   }
 
   getDecimalsForValue(value) {
-    //debugger;
     if (_.isNumber(this.panel.decimals)) {
       return {
         decimals: this.panel.decimals,
@@ -631,7 +726,8 @@ class DiagramCtrl extends MetricsPanelCtrl {
 
     var result = {};
     result.decimals = Math.max(0, dec);
-    result.scaledDecimals = result.decimals - Math.floor(Math.log(size) / Math.LN10) + 2;
+    result.scaledDecimals =
+      result.decimals - Math.floor(Math.log(size) / Math.LN10) + 2;
 
     return result;
   }
@@ -658,7 +754,7 @@ class DiagramCtrl extends MetricsPanelCtrl {
 
     function updateCanvasStyle() {
       canvas.width = Math.max(diagramElement[0].clientWidth, 100);
-      var canvasContext = canvas.getContext("2d");
+      var canvasContext = canvas.getContext('2d');
       canvasContext.clearRect(0, 0, canvas.width, canvas.height);
 
       var grd = canvasContext.createLinearGradient(0, 0, canvas.width, 0);
@@ -671,11 +767,15 @@ class DiagramCtrl extends MetricsPanelCtrl {
       canvasContext.fillRect(0, 0, canvas.width, 3);
       ctrl.canvasContext = canvasContext;
 
-      gradientValueMax.innerText = Math.max.apply(Math, ctrl.panel.thresholds.split(','));
-      gradientValueMin.innerText = Math.min.apply(Math, ctrl.panel.thresholds.split(','));
+      gradientValueMax.innerText = Math.max.apply(
+        Math,
+        ctrl.panel.thresholds.split(',')
+      );
+      gradientValueMin.innerText = Math.min.apply(
+        Math,
+        ctrl.panel.thresholds.split(',')
+      );
     }
-
-
 
     function setElementHeight() {
       //diagramContainer.css('height', ctrl.height + 'px');
@@ -707,8 +807,11 @@ class DiagramCtrl extends MetricsPanelCtrl {
         //console.info('finding targetElement');
         var targetElement = d3.select(svg[0].getElementById(key)); // $(svg).find('#'+key).first(); // jquery doesnt work for some ID expressions [prometheus data]
 
-        if (targetElement[0][0] !== null) { // probably a flowchart
-          targetElement.selectAll('rect,circle,polygon').style('fill', seriesItem.color);
+        if (targetElement[0][0] !== null) {
+          // probably a flowchart
+          targetElement
+            .selectAll('rect,circle,polygon')
+            .style('fill', seriesItem.color);
 
           var div = targetElement.select('div');
           var fo = targetElement.select('foreignObject');
@@ -722,20 +825,33 @@ class DiagramCtrl extends MetricsPanelCtrl {
         } else {
           console.debug('finding element that contains id: ' + key);
           // maybe a flowchart with an alias text node
-          targetElement = $(svg).find('div:contains("' + key + '")').filter(function() {
-            // Matches node name ( 'foo' in both 'foo' and 'foo[bar]')
-            return $(this).attr('id') === key;
-          });
+          targetElement = $(svg)
+            .find('div:contains("' + key + '")')
+            .filter(function() {
+              // Matches node name ( 'foo' in both 'foo' and 'foo[bar]')
+              return $(this).attr('id') === key;
+            });
           if (targetElement.length > 0) {
-            targetElement.parents('.node').find('rect, circle, polygon').css('fill', seriesItem.color);
+            targetElement
+              .parents('.node')
+              .find('rect, circle, polygon')
+              .css('fill', seriesItem.color);
             // make foreign object element taller to accomdate value in FireFox/IE
-            targetElement.parents('.node').find('foreignObject').attr('height', 45);
+            targetElement
+              .parents('.node')
+              .find('foreignObject')
+              .attr('height', 45);
             // for edge matches
             var edgeElement = targetElement.parent().find('.edgeLabel');
             if (edgeElement.length > 0) {
               edgeElement.css('background-color', 'transparent');
-              edgeElement.append('<br/>' + seriesItem.valueFormatted).addClass('diagram-value');
-              edgeElement.parent('div').css('text-align', 'center').css('background-color', seriesItem.color);
+              edgeElement
+                .append('<br/>' + seriesItem.valueFormatted)
+                .addClass('diagram-value');
+              edgeElement
+                .parent('div')
+                .css('text-align', 'center')
+                .css('background-color', seriesItem.color);
             } else {
               var dElement = d3.select(targetElement[0]);
               // Add value text
@@ -747,11 +863,16 @@ class DiagramCtrl extends MetricsPanelCtrl {
           } else {
             targetElement = $(svg).find('text:contains("' + key + '")'); // sequence diagram, gantt ?
             if (targetElement.length === 0) {
-              console.debug('couldnt not find a diagram node with id/text: ' + key);
+              console.debug(
+                'couldnt not find a diagram node with id/text: ' + key
+              );
               continue;
             }
             // for node matches
-            targetElement.parent().find('rect, circle, polygon').css('fill', seriesItem.color);
+            targetElement
+              .parent()
+              .find('rect, circle, polygon')
+              .css('fill', seriesItem.color);
             targetElement.append('\n' + seriesItem.valueFormatted);
           }
         }
@@ -779,7 +900,7 @@ function getColorForValue(data, value) {
 
 function getColorByXPercentage(canvas, xPercent) {
   var x = canvas.width * xPercent;
-  var context = canvas.getContext("2d");
+  var context = canvas.getContext('2d');
   var p = context.getImageData(x, 1, 1, 1).data;
   var color = 'rgba(' + [p[0] + ',' + p[1] + ',' + p[2] + ',' + p[3]] + ')';
   return color;
@@ -787,7 +908,4 @@ function getColorByXPercentage(canvas, xPercent) {
 
 DiagramCtrl.templateUrl = 'module.html';
 
-export {
-  DiagramCtrl,
-  DiagramCtrl as MetricsPanelCtrl
-};
+export { DiagramCtrl, DiagramCtrl as MetricsPanelCtrl };

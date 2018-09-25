@@ -49,7 +49,7 @@ System.register(['./libs/mermaid/dist/mermaidAPI', 'app/core/time_series2', 'app
 
   function getColorByXPercentage(canvas, xPercent) {
     var x = canvas.width * xPercent;
-    var context = canvas.getContext("2d");
+    var context = canvas.getContext('2d');
     var p = context.getImageData(x, 1, 1, 1).data;
     var color = 'rgba(' + [p[0] + ',' + p[1] + ',' + p[2] + ',' + p[3]] + ')';
     return color;
@@ -178,10 +178,10 @@ System.register(['./libs/mermaid/dist/mermaidAPI', 'app/core/time_series2', 'app
                 ['%m-%y', function (d) {
                     return d.getMonth();
                 }]] **/
-          }
-          //classDiagram: {},
-          //info: {}
-        }
+
+            //classDiagram: {},
+            //info: {}
+          } }
       };
 
       _export('MetricsPanelCtrl', _export('DiagramCtrl', DiagramCtrl = function (_MetricsPanelCtrl) {
@@ -201,7 +201,10 @@ System.register(['./libs/mermaid/dist/mermaidAPI', 'app/core/time_series2', 'app
           _this2.events.on('data-received', _this2.onDataReceived.bind(_this2));
           _this2.events.on('data-snapshot-load', _this2.onDataReceived.bind(_this2));
           _this2.unitFormats = kbn.getUnitFormats();
+          _this2.error = false;
+          _this2.errorText = '';
           _this2.initializeMermaid();
+          _this2.setupScrollToPanel();
           return _this2;
         }
 
@@ -210,6 +213,38 @@ System.register(['./libs/mermaid/dist/mermaidAPI', 'app/core/time_series2', 'app
           value: function initializeMermaid() {
             mermaidAPI.initialize(this.panel.init);
             mermaidAPI.parseError = this.handleParseError.bind(this);
+          }
+        }, {
+          key: 'setupScrollToPanel',
+          value: function setupScrollToPanel() {
+            function scrollToPanel(id) {
+              var $panelTitle = $('.panel-title-text').filter(function (index) {
+                return $(this).text() === id;
+              });
+              var $scrollCanvas = $('.scroll-canvas');
+              var newScrollTopPosition;
+
+              if (!$panelTitle.length) {
+                this.error = true;
+                this.errorText = this.$sce.trustAsHtml('The panel "' + id + '" does not exist');
+
+                this.$scope.$apply();
+
+                setTimeout(function () {
+                  this.error = false;
+                  this.errorText = '';
+
+                  this.$scope.$apply();
+                }.bind(this), 2000);
+
+                return;
+              }
+
+              newScrollTopPosition = $panelTitle.offset().top - 75;
+              $scrollCanvas.animate({ scrollTop: newScrollTopPosition });
+            }
+
+            window.scrollToPanel = scrollToPanel.bind(this);
           }
         }, {
           key: 'handleParseError',
@@ -248,7 +283,7 @@ System.register(['./libs/mermaid/dist/mermaidAPI', 'app/core/time_series2', 'app
           key: 'replaceMetricCharacters',
           value: function replaceMetricCharacters(metricName) {
             // a datasource sending bad data will have a type other than string, set it to "MISSING_METRIC_TARGET" and return
-            if (typeof metricName !== 'string') return "DATASOURCE_SENT_INVALID_METRIC_TARGET";
+            if (typeof metricName !== 'string') return 'DATASOURCE_SENT_INVALID_METRIC_TARGET';
             var replacedText = metricName.replace(/"|,|;|=|:|{|}/g, '_');
             for (var index in this.panel.metricCharacterReplacements) {
               var replacement = this.panel.metricCharacterReplacements[index];
@@ -579,8 +614,8 @@ System.register(['./libs/mermaid/dist/mermaidAPI', 'app/core/time_series2', 'app
             var worstSeries = series1;
             var series1thresholdLevel = this.getThresholdLevel(series1);
             var series2thresholdLevel = this.getThresholdLevel(series2);
-            console.log("Series1 threshold level: " + series1thresholdLevel);
-            console.log("Series2 threshold level: " + series2thresholdLevel);
+            console.log('Series1 threshold level: ' + series1thresholdLevel);
+            console.log('Series2 threshold level: ' + series2thresholdLevel);
             if (series2thresholdLevel > series1thresholdLevel) {
               // series2 has higher threshold violation
               worstSeries = series2;
@@ -679,7 +714,6 @@ System.register(['./libs/mermaid/dist/mermaidAPI', 'app/core/time_series2', 'app
         }, {
           key: 'getDecimalsForValue',
           value: function getDecimalsForValue(value) {
-            //debugger;
             if (_.isNumber(this.panel.decimals)) {
               return {
                 decimals: this.panel.decimals,
@@ -747,7 +781,7 @@ System.register(['./libs/mermaid/dist/mermaidAPI', 'app/core/time_series2', 'app
 
             function updateCanvasStyle() {
               canvas.width = Math.max(diagramElement[0].clientWidth, 100);
-              var canvasContext = canvas.getContext("2d");
+              var canvasContext = canvas.getContext('2d');
               canvasContext.clearRect(0, 0, canvas.width, canvas.height);
 
               var grd = canvasContext.createLinearGradient(0, 0, canvas.width, 0);
