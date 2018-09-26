@@ -45,6 +45,7 @@ System.register([], function (_export, _context) {
         $scope.thresholdsChanged = function (thresholds) {
           $scope.override['thresholds'] = thresholds.value;
           $scope.updateCurrentOverrides();
+          $scope.ctrl.refresh();
           $scope.ctrl.render();
         };
 
@@ -62,7 +63,7 @@ System.register([], function (_export, _context) {
 
         $scope.openColorSelector = function () {
           popoverSrv.show({
-            element: $element.find(".dropdown")[0],
+            element: $element.find('.dropdown')[0],
             position: 'top center',
             openOn: 'click',
             template: '<gf-color-picker></gf-color-picker>',
