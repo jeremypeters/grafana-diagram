@@ -1,4 +1,8 @@
-  angular.module('grafana.controllers').controller('SeriesOverridesDiagramCtrl', ['$scope', '$element', 'popoverSrv', function($scope, $element, popoverSrv) {
+angular.module('grafana.controllers').controller('SeriesOverridesDiagramCtrl', [
+  '$scope',
+  '$element',
+  'popoverSrv',
+  function($scope, $element, popoverSrv) {
     $scope.overrideMenu = [];
     $scope.currentOverrides = [];
     $scope.override = $scope.override || {};
@@ -34,19 +38,20 @@
       $scope.ctrl.render();
     };
 
-    $scope.thresholdsChanged = function(thresholds){
-    	$scope.override['thresholds'] = thresholds.value;
-    	$scope.updateCurrentOverrides();
-    	$scope.ctrl.render();
+    $scope.thresholdsChanged = function(thresholds) {
+      $scope.override['thresholds'] = thresholds.value;
+      $scope.updateCurrentOverrides();
+      $scope.ctrl.refresh();
+      $scope.ctrl.render();
     };
 
-    $scope.unitFormatChanged = function(option){
-    	$scope.override['unitFormat'] = option.value;
-    	$scope.updateCurrentOverrides();
-    	$scope.ctrl.refresh();
+    $scope.unitFormatChanged = function(option) {
+      $scope.override['unitFormat'] = option.value;
+      $scope.updateCurrentOverrides();
+      $scope.ctrl.refresh();
     };
 
-    $scope.decimalsChanged = function(option){
+    $scope.decimalsChanged = function(option) {
       $scope.override['decimals'] = option.value;
       $scope.updateCurrentOverrides();
       $scope.ctrl.refresh();
@@ -54,13 +59,13 @@
 
     $scope.openColorSelector = function() {
       popoverSrv.show({
-        element: $element.find(".dropdown")[0],
+        element: $element.find('.dropdown')[0],
         position: 'top center',
         openOn: 'click',
         template: '<gf-color-picker></gf-color-picker>',
         model: {
           autoClose: true,
-          colorSelected: $scope.colorSelected,
+          colorSelected: $scope.colorSelected
         },
         onClose: function() {
           $scope.ctrl.render();
@@ -84,7 +89,9 @@
       $scope.currentOverrides = [];
       _.each($scope.overrideMenu, function(option) {
         var value = $scope.override[option.propertyName];
-        if (_.isUndefined(value)) { return; }
+        if (_.isUndefined(value)) {
+          return;
+        }
         $scope.currentOverrides.push({
           name: option.text,
           propertyName: option.propertyName,
@@ -96,8 +103,15 @@
     //$scope.addOverrideOption('Color', 'color', ['change']);
     $scope.addOverrideOption('Thresholds', 'thresholds', ['custom']);
     $scope.addOverrideOption('Colors', 'invertColors', ['Invert Colors']);
-    $scope.addOverrideOption('Value', 'valueName', ['avg', 'min', 'max', 'total', 'current']);
+    $scope.addOverrideOption('Value', 'valueName', [
+      'avg',
+      'min',
+      'max',
+      'total',
+      'current'
+    ]);
     $scope.addOverrideOption('Decimals', 'decimals', [2]);
     $scope.addOverrideOption('Unit Format', 'unitFormat', ['select']);
     $scope.updateCurrentOverrides();
-  }]);
+  }
+]);
